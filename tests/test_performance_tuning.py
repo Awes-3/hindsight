@@ -10,7 +10,7 @@ import json
 import pytest
 from datetime import datetime, timezone
 from pathlib import Path
-from memory import TemporalSemanticMemory
+from memora import TemporalSemanticMemory
 
 
 # Configure logging to show performance metrics

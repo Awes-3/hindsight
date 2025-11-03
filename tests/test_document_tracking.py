@@ -5,7 +5,7 @@ import logging
 import os
 import pytest
 from datetime import datetime, timezone
-from memory import TemporalSemanticMemory
+from memora import TemporalSemanticMemory
 
 
 @pytest.mark.asyncio

@@ -290,7 +290,29 @@ class TemporalSemanticMemory(
         is_duplicate = []
 
         # Convert existing embeddings to numpy for faster computation
-        existing_embeddings = np.array([np.array(row['embedding']) for row in existing_facts])
+        embedding_arrays = []
+        for row in existing_facts:
+            raw_emb = row['embedding']
+            # Handle different pgvector formats
+            if isinstance(raw_emb, str):
+                # Parse string format: "[1.0, 2.0, ...]"
+                import json
+                emb = np.array(json.loads(raw_emb), dtype=np.float32)
+            elif isinstance(raw_emb, (list, tuple)):
+                emb = np.array(raw_emb, dtype=np.float32)
+            else:
+                # Try direct conversion
+                emb = np.array(raw_emb, dtype=np.float32)
+            embedding_arrays.append(emb)
+
+        if not embedding_arrays:
+            existing_embeddings = np.array([])
+        elif len(embedding_arrays) == 1:
+            # Single embedding: reshape to (1, dim)
+            existing_embeddings = embedding_arrays[0].reshape(1, -1)
+        else:
+            # Multiple embeddings: vstack
+            existing_embeddings = np.vstack(embedding_arrays)
 
         comp_start = time_mod.time()
         for embedding in embeddings:

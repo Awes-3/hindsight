@@ -16,19 +16,48 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from memory import TemporalSemanticMemory
+# Import from parent memora package
+from memora import TemporalSemanticMemory
 
 import logging
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
-app = FastAPI(title="Memory Graph API", version="1.0.0")
+app = FastAPI(
+    title="Agent Memory API",
+    version="1.0.0",
+    description="""
+A temporal-semantic memory system for AI agents that stores, retrieves, and reasons over memories.
+
+## Features
+
+* **Batch Memory Storage**: Store multiple memories efficiently with automatic fact extraction
+* **Semantic Search**: Find relevant memories using natural language queries
+* **Fact Type Filtering**: Search across world facts, agent actions, and opinions separately
+* **Think Endpoint**: Generate contextual answers based on agent identity and memories
+* **Graph Visualization**: Interactive memory graph visualization
+* **Document Tracking**: Track and manage memory documents with upsert support
+
+## Architecture
+
+The system uses:
+- **Temporal Links**: Connect memories that are close in time
+- **Semantic Links**: Connect semantically similar memories
+- **Entity Links**: Connect memories that mention the same entities
+- **Spreading Activation**: Intelligent traversal for memory retrieval
+    """,
+    contact={
+        "name": "Memory System",
+    },
+    license_info={
+        "name": "Apache 2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
+    }
+)
 
 # Mount static files
-app.mount("/static", StaticFiles(directory="web/static"), name="static")
+app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
 
 
 class SearchRequest(BaseModel):
@@ -40,12 +69,57 @@ class SearchRequest(BaseModel):
     mmr_lambda: float = 0.5
     trace: bool = False
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "query": "What did Alice say about machine learning?",
+                "agent_id": "user123",
+                "thinking_budget": 100,
+                "top_k": 10,
+                "mmr_lambda": 0.5,
+                "trace": True
+            }
+        }
+
+
+class SearchResponse(BaseModel):
+    """Response model for search endpoints."""
+    results: List[Dict[str, Any]]
+    trace: Optional[Dict[str, Any]] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "results": [
+                    {
+                        "text": "Alice works at Google on the AI team",
+                        "score": 0.95,
+                        "id": "123e4567-e89b-12d3-a456-426614174000"
+                    }
+                ],
+                "trace": {
+                    "query": "What did Alice say about machine learning?",
+                    "num_results": 1,
+                    "time_seconds": 0.123
+                }
+            }
+        }
+
 
 class MemoryItem(BaseModel):
     """Single memory item for batch put."""
     content: str
     event_date: Optional[datetime] = None
     context: Optional[str] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "content": "Alice mentioned she's working on a new ML model",
+                "event_date": "2024-01-15T10:30:00Z",
+                "context": "team meeting"
+            }
+        }
 
 
 class BatchPutRequest(BaseModel):
@@ -56,6 +130,45 @@ class BatchPutRequest(BaseModel):
     document_metadata: Optional[Dict[str, Any]] = None
     upsert: bool = False
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "agent_id": "user123",
+                "items": [
+                    {
+                        "content": "Alice works at Google",
+                        "context": "work"
+                    },
+                    {
+                        "content": "Bob went hiking yesterday",
+                        "event_date": "2024-01-15T10:00:00Z"
+                    }
+                ],
+                "document_id": "conversation_123",
+                "upsert": False
+            }
+        }
+
+
+class BatchPutResponse(BaseModel):
+    """Response model for batch put endpoint."""
+    success: bool
+    message: str
+    agent_id: str
+    document_id: Optional[str] = None
+    items_count: int
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "message": "Successfully stored 2 memory items",
+                "agent_id": "user123",
+                "document_id": "conversation_123",
+                "items_count": 2
+            }
+        }
+
 
 class ThinkRequest(BaseModel):
     """Request model for think endpoint."""
@@ -64,12 +177,66 @@ class ThinkRequest(BaseModel):
     thinking_budget: int = 50
     top_k: int = 10
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "query": "What do you think about artificial intelligence?",
+                "agent_id": "user123",
+                "thinking_budget": 50,
+                "top_k": 10
+            }
+        }
+
 
 class ThinkResponse(BaseModel):
     """Response model for think endpoint."""
     text: str
     based_on: Dict[str, List[Dict[str, Any]]]  # {"world": [...], "agent": [...], "opinion": [...]}
     new_opinions: List[str] = []  # List of newly formed opinions
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "text": "Based on my understanding, AI is a transformative technology...",
+                "based_on": {
+                    "world": [{"text": "AI is used in healthcare", "score": 0.9}],
+                    "agent": [{"text": "I discussed AI applications last week", "score": 0.85}],
+                    "opinion": [{"text": "I believe AI should be used ethically", "score": 0.8}]
+                },
+                "new_opinions": ["AI has great potential when used responsibly"]
+            }
+        }
+
+
+class AgentsResponse(BaseModel):
+    """Response model for agents list endpoint."""
+    agents: List[str]
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "agents": ["user123", "agent_alice", "agent_bob"]
+            }
+        }
+
+
+class GraphDataResponse(BaseModel):
+    """Response model for graph data endpoint."""
+    nodes: List[Dict[str, Any]]
+    edges: List[Dict[str, Any]]
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "nodes": [
+                    {"id": "1", "label": "Alice works at Google", "type": "world"},
+                    {"id": "2", "label": "Bob went hiking", "type": "world"}
+                ],
+                "edges": [
+                    {"from": "1", "to": "2", "type": "semantic", "weight": 0.8}
+                ]
+            }
+        }
 
 
 memory = TemporalSemanticMemory()
@@ -86,14 +253,23 @@ async def shutdown_event():
     await memory.close()
     logging.info("Memory system closed")
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def index():
     """Serve the visualization page."""
-    return FileResponse("web/templates/index.html")
+    return FileResponse(str(Path(__file__).parent / "templates" / "index.html"))
 
 
-@app.get("/api/graph")
-async def api_graph(agent_id: Optional[str] = None, fact_type: Optional[str] = None):
+@app.get(
+    "/api/graph",
+    response_model=GraphDataResponse,
+    tags=["Visualization"],
+    summary="Get memory graph data",
+    description="Retrieve graph data for visualization, optionally filtered by agent_id and fact_type (world/agent/opinion)"
+)
+async def api_graph(
+    agent_id: Optional[str] = None,
+    fact_type: Optional[str] = None
+):
     """Get graph data from database, optionally filtered by agent_id and fact_type."""
     try:
         data = await memory.get_graph_data(agent_id, fact_type)
@@ -105,11 +281,16 @@ async def api_graph(agent_id: Optional[str] = None, fact_type: Optional[str] = N
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/search")
+@app.post(
+    "/api/search",
+    response_model=SearchResponse,
+    tags=["Search"],
+    summary="Search all memory types",
+    description="Search across all memory types (world, agent, opinion) using semantic similarity and spreading activation"
+)
 async def api_search(request: SearchRequest):
     """Run a search and return results with trace."""
     try:
-        # Initialize memory system
         # Run search with tracing
         results, trace = await memory.search_async(
             agent_id=request.agent_id,
@@ -123,10 +304,10 @@ async def api_search(request: SearchRequest):
         # Convert trace to dict
         trace_dict = trace.to_dict() if trace else None
 
-        return {
-            'results': results,
-            'trace': trace_dict
-        }
+        return SearchResponse(
+            results=results,
+            trace=trace_dict
+        )
     except Exception as e:
         import traceback
         error_detail = f"{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
@@ -134,7 +315,13 @@ async def api_search(request: SearchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/world_search")
+@app.post(
+    "/api/world_search",
+    response_model=SearchResponse,
+    tags=["Search"],
+    summary="Search world facts",
+    description="Search only world facts - general knowledge about people, places, events, and things that happen"
+)
 async def api_world_search(request: SearchRequest):
     """Search only world facts (general knowledge about the world)."""
     try:
@@ -152,10 +339,10 @@ async def api_world_search(request: SearchRequest):
         # Convert trace to dict
         trace_dict = trace.to_dict() if trace else None
 
-        return {
-            'results': results,
-            'trace': trace_dict
-        }
+        return SearchResponse(
+            results=results,
+            trace=trace_dict
+        )
     except Exception as e:
         import traceback
         error_detail = f"{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
@@ -163,7 +350,13 @@ async def api_world_search(request: SearchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/agent_search")
+@app.post(
+    "/api/agent_search",
+    response_model=SearchResponse,
+    tags=["Search"],
+    summary="Search agent action facts",
+    description="Search only agent facts - memories about what the AI agent did, actions taken, and tasks performed"
+)
 async def api_agent_search(request: SearchRequest):
     """Search only agent facts (facts about what the agent did)."""
     try:
@@ -181,10 +374,10 @@ async def api_agent_search(request: SearchRequest):
         # Convert trace to dict
         trace_dict = trace.to_dict() if trace else None
 
-        return {
-            'results': results,
-            'trace': trace_dict
-        }
+        return SearchResponse(
+            results=results,
+            trace=trace_dict
+        )
     except Exception as e:
         import traceback
         error_detail = f"{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
@@ -192,7 +385,13 @@ async def api_agent_search(request: SearchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/opinion_search")
+@app.post(
+    "/api/opinion_search",
+    response_model=SearchResponse,
+    tags=["Search"],
+    summary="Search agent opinions",
+    description="Search only opinion facts - the agent's formed beliefs, perspectives, and viewpoints"
+)
 async def api_opinion_search(request: SearchRequest):
     """Search only opinion facts (agent's formed opinions and perspectives)."""
     try:
@@ -210,10 +409,10 @@ async def api_opinion_search(request: SearchRequest):
         # Convert trace to dict
         trace_dict = trace.to_dict() if trace else None
 
-        return {
-            'results': results,
-            'trace': trace_dict
-        }
+        return SearchResponse(
+            results=results,
+            trace=trace_dict
+        )
     except Exception as e:
         import traceback
         error_detail = f"{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
@@ -221,19 +420,24 @@ async def api_opinion_search(request: SearchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/think")
-async def api_think(request: ThinkRequest):
-    """
-    Think and formulate an answer using agent identity, world facts, and opinions.
+@app.post(
+    "/api/think",
+    response_model=ThinkResponse,
+    tags=["Reasoning"],
+    summary="Think and generate answer",
+    description="""
+Think and formulate an answer using agent identity, world facts, and opinions.
 
-    This endpoint:
-    1. Retrieves agent facts (agent's identity)
-    2. Retrieves world facts relevant to the query
-    3. Retrieves existing opinions (agent's perspectives)
-    4. Uses Groq LLM to formulate an answer
-    5. Extracts and stores any new opinions formed
-    6. Returns plain text answer, the facts used, and new opinions
+This endpoint:
+1. Retrieves agent facts (agent's identity)
+2. Retrieves world facts relevant to the query
+3. Retrieves existing opinions (agent's perspectives)
+4. Uses LLM to formulate a contextual answer
+5. Extracts and stores any new opinions formed
+6. Returns plain text answer, the facts used, and new opinions
     """
+)
+async def api_think(request: ThinkRequest):
     try:
         # Use the memory system's think_async method
         result = await memory.think_async(
@@ -256,12 +460,18 @@ async def api_think(request: ThinkRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/agents")
+@app.get(
+    "/api/agents",
+    response_model=AgentsResponse,
+    tags=["Management"],
+    summary="List all agents",
+    description="Get a list of all agent IDs that have stored memories in the system"
+)
 async def api_agents():
     """Get list of available agents from database."""
     try:
         agent_list = await memory.list_agents()
-        return {"agents": agent_list}
+        return AgentsResponse(agents=agent_list)
     except Exception as e:
         import traceback
         error_detail = f"{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
@@ -269,25 +479,30 @@ async def api_agents():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/memories/batch")
+@app.post(
+    "/api/memories/batch",
+    response_model=BatchPutResponse,
+    tags=["Memory Storage"],
+    summary="Store multiple memories",
+    description="""
+Store multiple memory items in batch with automatic fact extraction.
+
+Features:
+- Efficient batch processing
+- Automatic fact extraction from natural language
+- Entity recognition and linking
+- Document tracking with optional upsert
+- Temporal and semantic linking
+
+The system automatically:
+1. Extracts semantic facts from the content
+2. Generates embeddings
+3. Deduplicates similar facts
+4. Creates temporal, semantic, and entity links
+5. Tracks document metadata
+    """
+)
 async def api_batch_put(request: BatchPutRequest):
-    """
-    Store multiple memories in batch.
-
-    This endpoint calls put_batch_async to efficiently store multiple memory items.
-    Supports document tracking and upsert operations.
-
-    Example request:
-    {
-        "agent_id": "user123",
-        "items": [
-            {"content": "Alice works at Google", "context": "work"},
-            {"content": "Bob went hiking yesterday", "event_date": "2024-01-15T10:00:00Z"}
-        ],
-        "document_id": "conversation_123",
-        "upsert": false
-    }
-    """
     try:
         # Validate agent_id - prevent writing to reserved agents
         RESERVED_AGENT_IDS = {"locomo"}
@@ -296,9 +511,6 @@ async def api_batch_put(request: BatchPutRequest):
                 status_code=403,
                 detail=f"Cannot write to reserved agent_id '{request.agent_id}'. Reserved agents: {', '.join(RESERVED_AGENT_IDS)}"
             )
-
-        # Initialize memory system
-
 
         # Prepare contents for put_batch_async
         contents = []
@@ -319,13 +531,13 @@ async def api_batch_put(request: BatchPutRequest):
             upsert=request.upsert
         )
 
-        return {
-            "success": True,
-            "message": f"Successfully stored {len(contents)} memory items",
-            "agent_id": request.agent_id,
-            "document_id": request.document_id,
-            "items_count": len(contents)
-        }
+        return BatchPutResponse(
+            success=True,
+            message=f"Successfully stored {len(contents)} memory items",
+            agent_id=request.agent_id,
+            document_id=request.document_id,
+            items_count=len(contents)
+        )
     except Exception as e:
         import traceback
         error_detail = f"{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
@@ -365,4 +577,4 @@ if __name__ == "__main__":
     print("  GET  /api/agents          - List available agents")
     print("\n" + "=" * 80 + "\n")
 
-    uvicorn.run("server:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("memora.web.server:app", host="0.0.0.0", port=8080, reload=True)

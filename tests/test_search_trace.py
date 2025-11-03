@@ -4,8 +4,8 @@ Test search tracing functionality.
 import pytest
 import asyncio
 import os
-from memory.temporal_semantic_memory import TemporalSemanticMemory
-from memory.search_trace import SearchTrace
+from memora.temporal_semantic_memory import TemporalSemanticMemory
+from memora.search_trace import SearchTrace
 from datetime import datetime, timezone
 
 

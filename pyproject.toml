@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "agent_memory"
+name = "memora"
 version = "0.1.0"
 description = "Temporal + Semantic + Entity Memory System for AI agents using PostgreSQL"
 readme = "README.md"
@@ -29,7 +29,7 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["memory", "web"]
+packages = ["memora"]
 
 [tool.pytest.ini_options]
 log_cli = true

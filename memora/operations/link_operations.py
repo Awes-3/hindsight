@@ -338,9 +338,19 @@ class LinkOperationsMixin:
                         # Try direct conversion (works for numpy arrays, pgvector objects, etc.)
                         emb = np.array(raw_emb, dtype=np.float32)
 
+                    # Ensure it's 1D
+                    if emb.ndim != 1:
+                        raise ValueError(f"Expected 1D embedding, got shape {emb.shape}")
                     embedding_arrays.append(emb)
 
-                existing_embeddings = np.vstack(embedding_arrays) if embedding_arrays else np.array([])
+                if not embedding_arrays:
+                    existing_embeddings = np.array([])
+                elif len(embedding_arrays) == 1:
+                    # Single embedding: reshape to (1, dim)
+                    existing_embeddings = embedding_arrays[0].reshape(1, -1)
+                else:
+                    # Multiple embeddings: vstack
+                    existing_embeddings = np.vstack(embedding_arrays)
 
                 # For each new unit, compute similarities with ALL existing units
                 for unit_id, new_embedding in zip(unit_ids, embeddings):

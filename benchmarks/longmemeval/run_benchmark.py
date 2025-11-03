@@ -26,7 +26,7 @@ import asyncio
 import argparse
 import subprocess
 from rich.console import Console
-from memory import TemporalSemanticMemory
+from memora import TemporalSemanticMemory
 from longmemeval_benchmark import LongMemEvalDataset, LongMemEvalAnswerGenerator, LongMemEvalAnswerEvaluator
 from common.benchmark_runner import BenchmarkRunner
 

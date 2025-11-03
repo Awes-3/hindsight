@@ -341,7 +341,7 @@ poetry add ../memory-poc --editable
 ### 2. Import the memory system:
 
 ```python
-from memory import TemporalSemanticMemory
+from memora import TemporalSemanticMemory
 
 # Initialize memory
 memory = TemporalSemanticMemory()
@@ -363,7 +363,7 @@ results, trace = await memory.search_async(
 ### 3. Import the FastAPI app:
 
 ```python
-from web import app, memory
+from memora.web import app, memory
 
 # Use the FastAPI app in your own project
 # You can mount it as a sub-application or run it directly
@@ -377,7 +377,7 @@ if __name__ == "__main__":
 
 ```python
 from fastapi import FastAPI
-from web import app as memory_app, memory
+from memora.web import app as memory_app, memory
 
 # Create your own app
 my_app = FastAPI()
@@ -407,7 +407,7 @@ if __name__ == "__main__":
 - `SearchTrace`, `SearchTracer` - Search tracing utilities
 - `QueryInfo`, `EntryPoint`, `NodeVisit`, etc. - Trace data structures
 
-**From `web` package:**
+**From `memory.web` package:**
 - `app` - FastAPI application instance
 - `memory` - Shared TemporalSemanticMemory instance
 
@@ -417,10 +417,10 @@ To run the web interface:
 
 ```bash
 # Development mode with auto-reload
-uvicorn web.server:app --reload --port 8000
+uvicorn memora.web.server:app --reload --port 8000
 
 # Production mode
-uvicorn web.server:app --host 0.0.0.0 --port 8000 --workers 4
+uvicorn memora.web.server:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 Then open http://localhost:8000 in your browser to access the visualization interface.
@@ -476,7 +476,7 @@ The memory system uses a **mixin pattern** for code organization:
 ### Store Memories
 
 ```python
-from memory import TemporalSemanticMemory
+from memora import TemporalSemanticMemory
 
 memory = TemporalSemanticMemory()
 

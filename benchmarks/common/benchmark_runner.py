@@ -22,7 +22,7 @@ from rich.table import Table
 from rich import box
 import pydantic
 
-from memory import TemporalSemanticMemory
+from memora import TemporalSemanticMemory
 from openai import AsyncOpenAI
 
 console = Console()

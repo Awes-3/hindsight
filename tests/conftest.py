@@ -6,7 +6,7 @@ import pytest_asyncio
 import os
 import asyncio
 from dotenv import load_dotenv
-from memory import TemporalSemanticMemory
+from memora import TemporalSemanticMemory
 import asyncpg
 
 load_dotenv()

@@ -1,0 +1,837 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Agent Memory API",
+    "description": "\nA temporal-semantic memory system for AI agents that stores, retrieves, and reasons over memories.\n\n## Features\n\n* **Batch Memory Storage**: Store multiple memories efficiently with automatic fact extraction\n* **Semantic Search**: Find relevant memories using natural language queries\n* **Fact Type Filtering**: Search across world facts, agent actions, and opinions separately\n* **Think Endpoint**: Generate contextual answers based on agent identity and memories\n* **Graph Visualization**: Interactive memory graph visualization\n* **Document Tracking**: Track and manage memory documents with upsert support\n\n## Architecture\n\nThe system uses:\n- **Temporal Links**: Connect memories that are close in time\n- **Semantic Links**: Connect semantically similar memories\n- **Entity Links**: Connect memories that mention the same entities\n- **Spreading Activation**: Intelligent traversal for memory retrieval\n    ",
+    "contact": {
+      "name": "Memory System"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/graph": {
+      "get": {
+        "tags": [
+          "Visualization"
+        ],
+        "summary": "Get memory graph data",
+        "description": "Retrieve graph data for visualization, optionally filtered by agent_id and fact_type (world/agent/opinion)",
+        "operationId": "api_graph_api_graph_get",
+        "parameters": [
+          {
+            "name": "agent_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Agent Id"
+            }
+          },
+          {
+            "name": "fact_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fact Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GraphDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/search": {
+      "post": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "Search all memory types",
+        "description": "Search across all memory types (world, agent, opinion) using semantic similarity and spreading activation",
+        "operationId": "api_search_api_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/world_search": {
+      "post": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "Search world facts",
+        "description": "Search only world facts - general knowledge about people, places, events, and things that happen",
+        "operationId": "api_world_search_api_world_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent_search": {
+      "post": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "Search agent action facts",
+        "description": "Search only agent facts - memories about what the AI agent did, actions taken, and tasks performed",
+        "operationId": "api_agent_search_api_agent_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/opinion_search": {
+      "post": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "Search agent opinions",
+        "description": "Search only opinion facts - the agent's formed beliefs, perspectives, and viewpoints",
+        "operationId": "api_opinion_search_api_opinion_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/think": {
+      "post": {
+        "tags": [
+          "Reasoning"
+        ],
+        "summary": "Think and generate answer",
+        "description": "Think and formulate an answer using agent identity, world facts, and opinions.\n\nThis endpoint:\n1. Retrieves agent facts (agent's identity)\n2. Retrieves world facts relevant to the query\n3. Retrieves existing opinions (agent's perspectives)\n4. Uses LLM to formulate a contextual answer\n5. Extracts and stores any new opinions formed\n6. Returns plain text answer, the facts used, and new opinions",
+        "operationId": "api_think_api_think_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThinkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agents": {
+      "get": {
+        "tags": [
+          "Management"
+        ],
+        "summary": "List all agents",
+        "description": "Get a list of all agent IDs that have stored memories in the system",
+        "operationId": "api_agents_api_agents_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/memories/batch": {
+      "post": {
+        "tags": [
+          "Memory Storage"
+        ],
+        "summary": "Store multiple memories",
+        "description": "Store multiple memory items in batch with automatic fact extraction.\n\nFeatures:\n- Efficient batch processing\n- Automatic fact extraction from natural language\n- Entity recognition and linking\n- Document tracking with optional upsert\n- Temporal and semantic linking\n\nThe system automatically:\n1. Extracts semantic facts from the content\n2. Generates embeddings\n3. Deduplicates similar facts\n4. Creates temporal, semantic, and entity links\n5. Tracks document metadata",
+        "operationId": "api_batch_put_api_memories_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchPutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchPutResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/locomo": {
+      "get": {
+        "summary": "Api Locomo",
+        "description": "Get Locomo benchmark results.",
+        "operationId": "api_locomo_api_locomo_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AgentsResponse": {
+        "properties": {
+          "agents": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Agents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agents"
+        ],
+        "title": "AgentsResponse",
+        "description": "Response model for agents list endpoint.",
+        "example": {
+          "agents": [
+            "user123",
+            "agent_alice",
+            "agent_bob"
+          ]
+        }
+      },
+      "BatchPutRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MemoryItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "document_metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Metadata"
+          },
+          "upsert": {
+            "type": "boolean",
+            "title": "Upsert",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "items"
+        ],
+        "title": "BatchPutRequest",
+        "description": "Request model for batch put endpoint.",
+        "example": {
+          "agent_id": "user123",
+          "document_id": "conversation_123",
+          "items": [
+            {
+              "content": "Alice works at Google",
+              "context": "work"
+            },
+            {
+              "content": "Bob went hiking yesterday",
+              "event_date": "2024-01-15T10:00:00Z"
+            }
+          ],
+          "upsert": false
+        }
+      },
+      "BatchPutResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "items_count": {
+            "type": "integer",
+            "title": "Items Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "agent_id",
+          "items_count"
+        ],
+        "title": "BatchPutResponse",
+        "description": "Response model for batch put endpoint.",
+        "example": {
+          "agent_id": "user123",
+          "document_id": "conversation_123",
+          "items_count": 2,
+          "message": "Successfully stored 2 memory items",
+          "success": true
+        }
+      },
+      "GraphDataResponse": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "edges": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Edges"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nodes",
+          "edges"
+        ],
+        "title": "GraphDataResponse",
+        "description": "Response model for graph data endpoint.",
+        "example": {
+          "edges": [
+            {
+              "from": "1",
+              "to": "2",
+              "type": "semantic",
+              "weight": 0.8
+            }
+          ],
+          "nodes": [
+            {
+              "id": "1",
+              "label": "Alice works at Google",
+              "type": "world"
+            },
+            {
+              "id": "2",
+              "label": "Bob went hiking",
+              "type": "world"
+            }
+          ]
+        }
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MemoryItem": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "event_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Date"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "MemoryItem",
+        "description": "Single memory item for batch put.",
+        "example": {
+          "content": "Alice mentioned she's working on a new ML model",
+          "context": "team meeting",
+          "event_date": "2024-01-15T10:30:00Z"
+        }
+      },
+      "SearchRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id",
+            "default": "default"
+          },
+          "thinking_budget": {
+            "type": "integer",
+            "title": "Thinking Budget",
+            "default": 100
+          },
+          "top_k": {
+            "type": "integer",
+            "title": "Top K",
+            "default": 10
+          },
+          "mmr_lambda": {
+            "type": "number",
+            "title": "Mmr Lambda",
+            "default": 0.5
+          },
+          "trace": {
+            "type": "boolean",
+            "title": "Trace",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "SearchRequest",
+        "description": "Request model for search endpoint.",
+        "example": {
+          "agent_id": "user123",
+          "mmr_lambda": 0.5,
+          "query": "What did Alice say about machine learning?",
+          "thinking_budget": 100,
+          "top_k": 10,
+          "trace": true
+        }
+      },
+      "SearchResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "trace": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "SearchResponse",
+        "description": "Response model for search endpoints.",
+        "example": {
+          "results": [
+            {
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "score": 0.95,
+              "text": "Alice works at Google on the AI team"
+            }
+          ],
+          "trace": {
+            "num_results": 1,
+            "query": "What did Alice say about machine learning?",
+            "time_seconds": 0.123
+          }
+        }
+      },
+      "ThinkRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id",
+            "default": "default"
+          },
+          "thinking_budget": {
+            "type": "integer",
+            "title": "Thinking Budget",
+            "default": 50
+          },
+          "top_k": {
+            "type": "integer",
+            "title": "Top K",
+            "default": 10
+          }
+        },
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "ThinkRequest",
+        "description": "Request model for think endpoint.",
+        "example": {
+          "agent_id": "user123",
+          "query": "What do you think about artificial intelligence?",
+          "thinking_budget": 50,
+          "top_k": 10
+        }
+      },
+      "ThinkResponse": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "based_on": {
+            "additionalProperties": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Based On"
+          },
+          "new_opinions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "New Opinions",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "based_on"
+        ],
+        "title": "ThinkResponse",
+        "description": "Response model for think endpoint.",
+        "example": {
+          "based_on": {
+            "agent": [
+              {
+                "score": 0.85,
+                "text": "I discussed AI applications last week"
+              }
+            ],
+            "opinion": [
+              {
+                "score": 0.8,
+                "text": "I believe AI should be used ethically"
+              }
+            ],
+            "world": [
+              {
+                "score": 0.9,
+                "text": "AI is used in healthcare"
+              }
+            ]
+          },
+          "new_opinions": [
+            "AI has great potential when used responsibly"
+          ],
+          "text": "Based on my understanding, AI is a transformative technology..."
+        }
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

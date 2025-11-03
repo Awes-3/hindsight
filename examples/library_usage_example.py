@@ -7,7 +7,7 @@ This demonstrates how to:
 3. Mount the memory app as a sub-application
 """
 import asyncio
-from web import app, memory
+from memora.web import app, memory
 
 
 async def example_memory_usage():

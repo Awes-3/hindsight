@@ -4,7 +4,7 @@ Test think function for opinion generation and consistency.
 import pytest
 import os
 from datetime import datetime, timezone
-from memory import TemporalSemanticMemory
+from memora import TemporalSemanticMemory
 
 
 @pytest.mark.asyncio

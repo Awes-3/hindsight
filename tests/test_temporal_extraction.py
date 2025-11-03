@@ -3,7 +3,7 @@ Test temporal extraction and per-fact dating.
 """
 import pytest
 from datetime import datetime, timezone, timedelta
-from memory.llm_client import extract_facts_from_text
+from memora.llm_client import extract_facts_from_text
 
 
 @pytest.mark.asyncio

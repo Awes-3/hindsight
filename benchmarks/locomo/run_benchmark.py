@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import asyncio
 import argparse
-from memory import TemporalSemanticMemory
+from memora import TemporalSemanticMemory
 from locomo_benchmark import LoComoDataset, LoComoAnswerGenerator, LoComoAnswerEvaluator
 from common.benchmark_runner import BenchmarkRunner
 
